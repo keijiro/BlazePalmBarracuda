@@ -2,7 +2,7 @@
   "dependencies": {
     "com.unity.barracuda": {
       "version": "1.4.0-preview",
-      "depth": 1,
+      "depth": 0,
       "source": "registry",
       "dependencies": {
         "com.unity.burst": "1.3.4",
