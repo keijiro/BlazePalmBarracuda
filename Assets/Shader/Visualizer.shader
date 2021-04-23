@@ -17,8 +17,8 @@ Shader "Hidden/MediaPipe/BlazePalm/Visualizer"
         float y = d.center.y + d.extent.y * lerp(-0.5, 0.5, vid < 2 || vid == 5);
 
         // Clip space to screen space
-        x =  2 * x - 1;
-        y = -2 * y + 1;
+        x = 2 * x - 1;
+        y = 2 * y - 1;
 
         // Aspect ratio compensation
         x = x * _ScreenParams.y / _ScreenParams.x;

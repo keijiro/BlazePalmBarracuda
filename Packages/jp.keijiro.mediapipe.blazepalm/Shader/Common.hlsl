@@ -15,7 +15,7 @@ float4x4 DetectionToMatrix(in PalmDetection d)
     return float4x4(d.center, d.extent,
                     d.keyPoints[0], d.keyPoints[1],
                     d.keyPoints[2], d.keyPoints[3],
-                    d.keyPoints[4], d.keyPoints[6]);
+                    d.keyPoints[4], d.keyPoints[5]);
 }
 
 PalmDetection MatrixToDetection(float4x4 m, float score)
@@ -28,8 +28,7 @@ PalmDetection MatrixToDetection(float4x4 m, float score)
     d.keyPoints[2] = m._m20_m21;
     d.keyPoints[3] = m._m22_m23;
     d.keyPoints[4] = m._m30_m31;
-    d.keyPoints[5] = 0;
-    d.keyPoints[6] = m._m32_m33;
+    d.keyPoints[5] = m._m32_m33;
     d.score = score;
     d.pad = 0;
     return d;

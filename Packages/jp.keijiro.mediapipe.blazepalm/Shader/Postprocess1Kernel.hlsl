@@ -34,7 +34,7 @@ void KERNEL_NAME(uint2 id : SV_DispatchThreadID)
         d.extent = float2(w, h) * scale;
 
         // Key points
-        [unroll] for (uint ki = 0; ki < 7; ki++)
+        [unroll] for (uint ki = 0; ki < 6; ki++)
         {
             float kx = _Boxes[uint2(4 + 2 * ki + 0, row)];
             float ky = _Boxes[uint2(4 + 2 * ki + 1, row)];

@@ -7,9 +7,9 @@ struct PalmDetection
 {
     float2 center;
     float2 extent;
-    float2 keyPoints[7];
+    float2 keyPoints[6];
     float score;
-    float pad;
+    float3 pad;
 };
 
 #endif

@@ -22,14 +22,13 @@ partial class PalmDetector
         public readonly Vector2 middle;
         public readonly Vector2 ring;
         public readonly Vector2 pinky;
-        public readonly Vector2 not_in_use;
         public readonly Vector2 thumb;
 
         // Confidence score [0, 1]
         public readonly float score;
 
         // Padding
-        public readonly float pad;
+        public readonly float pad1, pad2, pad3;
 
         // sizeof(Detection)
         public const int Size = 20 * sizeof(float);
