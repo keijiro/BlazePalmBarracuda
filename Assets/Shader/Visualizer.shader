@@ -51,7 +51,7 @@ Shader "Hidden/MediaPipe/BlazePalm/Visualizer"
 
     float4 FragmentKey(float4 position : SV_Position) : SV_Target
     {
-        return float4(1, 1, 0, 0.5);
+        return float4(0, 0, 1, 0.9);
     }
 
     ENDCG
