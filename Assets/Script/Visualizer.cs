@@ -20,7 +20,9 @@ public sealed class Visualizer : MonoBehaviour
 
     PalmDetector _detector;
     Material _material;
-    ComputeBuffer _drawArgs;
+
+    ComputeBuffer _boxDrawArgs;
+    ComputeBuffer _keyDrawArgs;
 
     #endregion
 
@@ -30,36 +32,45 @@ public sealed class Visualizer : MonoBehaviour
     {
         _detector = new PalmDetector(_resources);
         _material = new Material(_shader);
-        _drawArgs = new ComputeBuffer(4, sizeof(uint),
-                                      ComputeBufferType.IndirectArguments);
-        _drawArgs.SetData(new [] {6, 0, 0, 0});
+
+        var cbType = ComputeBufferType.IndirectArguments;
+        _boxDrawArgs = new ComputeBuffer(4, sizeof(uint), cbType);
+        _keyDrawArgs = new ComputeBuffer(4, sizeof(uint), cbType);
+        _boxDrawArgs.SetData(new [] {6, 0, 0, 0});
+        _keyDrawArgs.SetData(new [] {24, 0, 0, 0});
     }
 
     void OnDestroy()
     {
         _detector.Dispose();
         Destroy(_material);
-        _drawArgs.Dispose();
+
+        _boxDrawArgs.Dispose();
+        _keyDrawArgs.Dispose();
     }
 
     void LateUpdate()
     {
-        // Palm detection
         _detector.ProcessImage(_webcam.Texture);
-
-        // UI update
         _previewUI.texture = _webcam.Texture;
     }
 
     void OnRenderObject()
     {
-        _detector.SetIndirectDrawCount(_drawArgs);
+        // Detection buffer
         _material.SetBuffer("_Detections", _detector.DetectionBuffer);
+
+        // Copy the detection count into the indirect draw args.
+        _detector.SetIndirectDrawCount(_boxDrawArgs);
+        _detector.SetIndirectDrawCount(_keyDrawArgs);
 
         // Bounding box
         _material.SetPass(0);
-        Graphics.DrawProceduralIndirectNow
-          (MeshTopology.Triangles, _drawArgs, 0);
+        Graphics.DrawProceduralIndirectNow(MeshTopology.Triangles, _boxDrawArgs, 0);
+
+        // Key points
+        _material.SetPass(1);
+        Graphics.DrawProceduralIndirectNow(MeshTopology.Lines, _keyDrawArgs, 0);
     }
 
     #endregion
