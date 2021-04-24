@@ -7,7 +7,7 @@ BlazePalmBarracuda
 [MediaPipe BlazePalm] model on the [Unity Barracuda] neural network inference
 library.
 
-[MediaPipe BlazeFace]:
+[MediaPipe BlazePalm]:
   https://github.com/tensorflow/tfjs-models/tree/master/handpose
 
 [Unity Barracuda]:
