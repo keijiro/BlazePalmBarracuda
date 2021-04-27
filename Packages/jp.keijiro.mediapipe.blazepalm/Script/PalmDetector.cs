@@ -14,6 +14,9 @@ public sealed partial class PalmDetector : System.IDisposable
     public ComputeBuffer DetectionBuffer
       => _post2Buffer;
 
+    public ComputeBuffer CountBuffer
+      => _countBuffer;
+
     public void SetIndirectDrawCount(ComputeBuffer drawArgs)
       => ComputeBuffer.CopyCount(_post2Buffer, drawArgs, sizeof(uint));
 
