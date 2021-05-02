@@ -11,6 +11,9 @@ public sealed partial class PalmDetector : System.IDisposable
 {
     #region Public accessors
 
+    public int ImageSize
+      => _size;
+
     public ComputeBuffer DetectionBuffer
       => _post2Buffer;
 
@@ -37,7 +40,10 @@ public sealed partial class PalmDetector : System.IDisposable
       => DeallocateObjects();
 
     public void ProcessImage(Texture image, float threshold = 0.75f)
-      => RunModel(image, threshold);
+      => RunModel(Preprocess(image), threshold);
+
+    public void ProcessImage(ComputeBuffer buffer, float threshold = 0.75f)
+      => RunModel(buffer, threshold);
 
     #endregion
 
@@ -100,21 +106,25 @@ public sealed partial class PalmDetector : System.IDisposable
 
     #region Neural network inference function
 
-    void RunModel(Texture source, float threshold)
+    ComputeBuffer Preprocess(Texture source)
     {
-        // Reset the compute buffer counters.
-        _post1Buffer.SetCounterValue(0);
-        _post2Buffer.SetCounterValue(0);
-
         // Preprocessing
         var pre = _resources.preprocess;
         pre.SetInt("_ImageSize", _size);
         pre.SetTexture(0, "_Texture", source);
         pre.SetBuffer(0, "_Tensor", _preBuffer);
         pre.Dispatch(0, _size / 8, _size / 8, 1);
+        return _preBuffer;
+    }
+
+    void RunModel(ComputeBuffer input, float threshold)
+    {
+        // Reset the compute buffer counters.
+        _post1Buffer.SetCounterValue(0);
+        _post2Buffer.SetCounterValue(0);
 
         // Run the BlazePalm model.
-        using (var tensor = new Tensor(1, _size, _size, 3, _preBuffer))
+        using (var tensor = new Tensor(1, _size, _size, 3, input))
             _worker.Execute(tensor);
 
         // Output tensors -> Temporary render textures
