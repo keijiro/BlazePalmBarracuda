@@ -193,6 +193,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: -10}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 1
@@ -225,6 +226,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 939645701}
   m_RootOrder: 0
@@ -359,6 +361,7 @@ RectTransform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0, y: 0, z: 0}
+  m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 792773822}
   m_Father: {fileID: 0}
@@ -397,6 +400,7 @@ Transform:
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
@@ -413,9 +417,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8d1f67c39519f47b692dd34e10a648c8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _webcam: {fileID: 1786288673}
-  _previewUI: {fileID: 792773823}
+  _source: {fileID: 1786288673}
   _resources: {fileID: 11400000, guid: 4fb839cbed0f44aa1bf81cb6aff8a91f, type: 2}
+  _previewUI: {fileID: 792773823}
   _shader: {fileID: 4800000, guid: 2eb30809b6ceb4a5fa7036a2f67c772e, type: 3}
 --- !u!114 &1786288673
 MonoBehaviour:
@@ -426,9 +430,17 @@ MonoBehaviour:
   m_GameObject: {fileID: 1786288670}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d5f943309b40f4837930b91aa659ac29, type: 3}
+  m_Script: {fileID: 11500000, guid: 40ff2e515a81541cbb664860588e2c6e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _deviceName: 
-  _resolution: {x: 1080, y: 1080}
-  _dummyImage: {fileID: 2800000, guid: 629ca576097494ca1b85620d558f0fac, type: 3}
+  _sourceType: 0
+  _texture: {fileID: 2800000, guid: 629ca576097494ca1b85620d558f0fac, type: 3}
+  _textureUrl: 
+  _video: {fileID: 0}
+  _videoUrl: 
+  _webcamName: 
+  _webcamResolution: {x: 1920, y: 1080}
+  _webcamFrameRate: 30
+  _outputTexture: {fileID: 0}
+  _outputResolution: {x: 1024, y: 1024}
+  _shader: {fileID: 4800000, guid: 3f7d8db4748f54c638a46cec0b0e61f8, type: 3}
