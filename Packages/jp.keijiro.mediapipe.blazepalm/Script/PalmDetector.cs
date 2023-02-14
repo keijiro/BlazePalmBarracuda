@@ -1,6 +1,7 @@
-using System.Collections.Generic;
 using Unity.Barracuda;
 using UnityEngine;
+using Klak.NNUtils;
+using Klak.NNUtils.Extensions;
 
 namespace MediaPipe.BlazePalm {
 
@@ -9,180 +10,126 @@ namespace MediaPipe.BlazePalm {
 //
 public sealed partial class PalmDetector : System.IDisposable
 {
-    #region Public accessors
-
-    public int ImageSize
-      => _size;
-
-    public ComputeBuffer DetectionBuffer
-      => _post2Buffer;
-
-    public ComputeBuffer CountBuffer
-      => _countBuffer;
-
-    public void SetIndirectDrawCount(ComputeBuffer drawArgs)
-      => ComputeBuffer.CopyCount(_post2Buffer, drawArgs, sizeof(uint));
-
-    public IEnumerable<Detection> Detections
-      => _post2ReadCache ?? UpdatePost2ReadCache();
-
-    #endregion
-
-    #region Public methods
+    #region Public methods/properties
 
     public PalmDetector(ResourceSet resources)
-    {
-        _resources = resources;
-        AllocateObjects();
-    }
+      => AllocateObjects(resources);
 
     public void Dispose()
       => DeallocateObjects();
 
     public void ProcessImage(Texture image, float threshold = 0.75f)
-      => RunModel(Preprocess(image), threshold);
+      => RunModel(image, threshold);
 
-    public void ProcessImage(ComputeBuffer buffer, float threshold = 0.75f)
-      => RunModel(buffer, threshold);
+    public int ImageSize
+      => _size;
 
-    #endregion
+    public System.ReadOnlySpan<Detection> Detections
+      => _readCache.Cached;
 
-    #region Compile-time constants
+    public GraphicsBuffer DetectionBuffer
+      => _output.post2;
 
-    // Maximum number of detections. This value must be matched with
-    // MAX_DETECTION in Common.hlsl.
-    const int MaxDetection = 64;
+    public GraphicsBuffer CountBuffer
+      => _output.count;
+
+    public void SetIndirectDrawCount(GraphicsBuffer drawArgs)
+      => GraphicsBuffer.CopyCount(_output.post2, drawArgs, sizeof(uint));
 
     #endregion
 
     #region Private objects
 
     ResourceSet _resources;
-    ComputeBuffer _preBuffer;
-    ComputeBuffer _post1Buffer;
-    ComputeBuffer _post2Buffer;
-    ComputeBuffer _countBuffer;
-    IWorker _worker;
     int _size;
+    IWorker _worker;
+    ImagePreprocess _preprocess;
+    (GraphicsBuffer post1, GraphicsBuffer post2, GraphicsBuffer count) _output;
+    CountedBufferReader<Detection> _readCache;
 
-    void AllocateObjects()
+    void AllocateObjects(ResourceSet resources)
     {
+        _resources = resources;
+
+        // NN model
         var model = ModelLoader.Load(_resources.model);
-        _size = model.inputs[0].shape[6]; // Input tensor width
+        _size = model.inputs[0].GetTensorShape().GetWidth();
 
-        _preBuffer = new ComputeBuffer(_size * _size * 3, sizeof(float));
+        // GPU worker
+        _worker = model.CreateWorker(WorkerFactory.Device.GPU);
 
-        _post1Buffer = new ComputeBuffer
-          (MaxDetection, Detection.Size, ComputeBufferType.Append);
+        // Preprocess
+        _preprocess = new ImagePreprocess(_size, _size);
 
-        _post2Buffer = new ComputeBuffer
-          (MaxDetection, Detection.Size, ComputeBufferType.Append);
+        // Output buffers
+        _output.post1 = new GraphicsBuffer(GraphicsBuffer.Target.Append, Detection.Max, Detection.Size);
+        _output.post2 = new GraphicsBuffer(GraphicsBuffer.Target.Append, Detection.Max, Detection.Size);
+        _output.count = new GraphicsBuffer(GraphicsBuffer.Target.Raw, 1, sizeof(uint));
 
-        _countBuffer = new ComputeBuffer
-          (1, sizeof(uint), ComputeBufferType.Raw);
-
-        _worker = model.CreateWorker();
+        // Detection data read cache
+        _readCache = new CountedBufferReader<Detection>(_output.post2, _output.count, Detection.Max);
     }
 
     void DeallocateObjects()
     {
-        _preBuffer?.Dispose();
-        _preBuffer = null;
-
-        _post1Buffer?.Dispose();
-        _post1Buffer = null;
-
-        _post2Buffer?.Dispose();
-        _post2Buffer = null;
-
-        _countBuffer?.Dispose();
-        _countBuffer = null;
-
         _worker?.Dispose();
         _worker = null;
+
+        _preprocess?.Dispose();
+        _preprocess = null;
+
+        _output.post1?.Dispose();
+        _output.post2?.Dispose();
+        _output.count?.Dispose();
+        _output = (null, null, null);
     }
 
     #endregion
 
     #region Neural network inference function
 
-    ComputeBuffer Preprocess(Texture source)
-    {
-        // Preprocessing
-        var pre = _resources.preprocess;
-        pre.SetInt("_ImageSize", _size);
-        pre.SetTexture(0, "_Texture", source);
-        pre.SetBuffer(0, "_Tensor", _preBuffer);
-        pre.Dispatch(0, _size / 8, _size / 8, 1);
-        return _preBuffer;
-    }
-
-    void RunModel(ComputeBuffer input, float threshold)
+    void RunModel(Texture source, float threshold)
     {
         // Reset the compute buffer counters.
-        _post1Buffer.SetCounterValue(0);
-        _post2Buffer.SetCounterValue(0);
+        _output.post1.SetCounterValue(0);
+        _output.post2.SetCounterValue(0);
+
+        // Preprocessing
+        _preprocess.Dispatch(source, _resources.preprocess);
 
         // Run the BlazePalm model.
-        using (var tensor = new Tensor(1, _size, _size, 3, input))
-            _worker.Execute(tensor);
-
-        // Output tensors -> Temporary render textures
-        var scoresRT = _worker.CopyOutputToTempRT("classificators",  1, 896);
-        var  boxesRT = _worker.CopyOutputToTempRT("regressors"    , 18, 896);
+        _worker.Execute(_preprocess.Tensor);
 
         // 1st postprocess (bounding box aggregation)
         var post1 = _resources.postprocess1;
         post1.SetFloat("_ImageSize", _size);
         post1.SetFloat("_Threshold", threshold);
 
-        post1.SetTexture(0, "_Scores", scoresRT);
-        post1.SetTexture(0, "_Boxes", boxesRT);
-        post1.SetBuffer(0, "_Output", _post1Buffer);
+        post1.SetBuffer(0, "_Scores", _worker.PeekOutputBuffer("classificators"));
+        post1.SetBuffer(0, "_Boxes", _worker.PeekOutputBuffer("regressors"));
+        post1.SetBuffer(0, "_Output", _output.post1);
         post1.Dispatch(0, 1, 1, 1);
 
-        post1.SetTexture(1, "_Scores", scoresRT);
-        post1.SetTexture(1, "_Boxes", boxesRT);
-        post1.SetBuffer(1, "_Output", _post1Buffer);
+        post1.SetBuffer(1, "_Scores", _worker.PeekOutputBuffer("classificators"));
+        post1.SetBuffer(1, "_Boxes", _worker.PeekOutputBuffer("regressors"));
+        post1.SetBuffer(1, "_Output", _output.post1);
         post1.Dispatch(1, 1, 1, 1);
 
-        // Release the temporary render textures.
-        RenderTexture.ReleaseTemporary(scoresRT);
-        RenderTexture.ReleaseTemporary(boxesRT);
-
         // Retrieve the bounding box count.
-        ComputeBuffer.CopyCount(_post1Buffer, _countBuffer, 0);
+        GraphicsBuffer.CopyCount(_output.post1, _output.count, 0);
 
         // 2nd postprocess (overlap removal)
         var post2 = _resources.postprocess2;
-        post2.SetBuffer(0, "_Input", _post1Buffer);
-        post2.SetBuffer(0, "_Count", _countBuffer);
-        post2.SetBuffer(0, "_Output", _post2Buffer);
+        post2.SetBuffer(0, "_Input", _output.post1);
+        post2.SetBuffer(0, "_Count", _output.count);
+        post2.SetBuffer(0, "_Output", _output.post2);
         post2.Dispatch(0, 1, 1, 1);
 
         // Retrieve the bounding box count after removal.
-        ComputeBuffer.CopyCount(_post2Buffer, _countBuffer, 0);
+        GraphicsBuffer.CopyCount(_output.post2, _output.count, 0);
 
-        // Read cache invalidation
-        _post2ReadCache = null;
-    }
-
-    #endregion
-
-    #region GPU to CPU readback
-
-    Detection[] _post2ReadCache;
-    int[] _countReadCache = new int[1];
-
-    Detection[] UpdatePost2ReadCache()
-    {
-        _countBuffer.GetData(_countReadCache, 0, 0, 1);
-        var count = _countReadCache[0];
-
-        _post2ReadCache = new Detection[count];
-        _post2Buffer.GetData(_post2ReadCache, 0, 0, count);
-
-        return _post2ReadCache;
+        // Cache data invalidation
+        _readCache.InvalidateCache();
     }
 
     #endregion

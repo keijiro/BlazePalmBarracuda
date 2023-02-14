@@ -8,8 +8,8 @@
 #include "Common.hlsl"
 
 // Input uniforms
-Texture2D<float> _Scores;
-Texture2D<float> _Boxes;
+StructuredBuffer<float> _Scores;
+StructuredBuffer<float> _Boxes;
 float _ImageSize;
 float _Threshold;
 
@@ -19,7 +19,7 @@ AppendStructuredBuffer<PalmDetection> _Output;
 // First layer: 8-pixel stride, two anchors
 #define CELLS_IN_ROW 16
 #define ANCHOR_COUNT 2
-#define INDEX_OFFSET 384
+#define INDEX_OFFSET 0
 #define KERNEL_NAME Postprocess1Layer1
 #include "Postprocess1Kernel.hlsl"
 
@@ -31,6 +31,6 @@ AppendStructuredBuffer<PalmDetection> _Output;
 // Second layer: 16-pixel stride, six anchors
 #define CELLS_IN_ROW 8
 #define ANCHOR_COUNT 6
-#define INDEX_OFFSET 0
+#define INDEX_OFFSET 512
 #define KERNEL_NAME Postprocess1Layer2
 #include "Postprocess1Kernel.hlsl"

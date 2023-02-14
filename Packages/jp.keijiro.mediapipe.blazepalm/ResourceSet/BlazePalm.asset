@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: BlazePalm
   m_EditorClassIdentifier: 
   model: {fileID: 5022602860645237092, guid: be4fde188deaa461f8778421542b0ab1, type: 3}
-  preprocess: {fileID: 7200000, guid: cae4dec897e874a3ab8692b0cc33cad4, type: 3}
+  preprocess: {fileID: 7200000, guid: 065b9d2f5e685444881e88945bf0492b, type: 3}
   postprocess1: {fileID: 7200000, guid: afc194775336d4903ae435c94b2d7ab8, type: 3}
   postprocess2: {fileID: 7200000, guid: 915dd34bc135a4029b8daa307d229aba, type: 3}

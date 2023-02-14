@@ -19,8 +19,8 @@ public sealed class Visualizer : MonoBehaviour
     PalmDetector _detector;
     Material _material;
 
-    ComputeBuffer _boxDrawArgs;
-    ComputeBuffer _keyDrawArgs;
+    GraphicsBuffer _boxDrawArgs;
+    GraphicsBuffer _keyDrawArgs;
 
     #endregion
 
@@ -31,9 +31,9 @@ public sealed class Visualizer : MonoBehaviour
         _detector = new PalmDetector(_resources);
         _material = new Material(_shader);
 
-        var cbType = ComputeBufferType.IndirectArguments;
-        _boxDrawArgs = new ComputeBuffer(4, sizeof(uint), cbType);
-        _keyDrawArgs = new ComputeBuffer(4, sizeof(uint), cbType);
+        var target = GraphicsBuffer.Target.IndirectArguments;
+        _boxDrawArgs = new GraphicsBuffer(target, 4, sizeof(uint));
+        _keyDrawArgs = new GraphicsBuffer(target, 4, sizeof(uint));
         _boxDrawArgs.SetData(new [] {6, 0, 0, 0});
         _keyDrawArgs.SetData(new [] {24, 0, 0, 0});
     }

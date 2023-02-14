@@ -32,6 +32,10 @@ partial class PalmDetector
 
         // sizeof(Detection)
         public const int Size = 20 * sizeof(float);
+
+        // Maximum number of detections
+        // This value must be matched with MAX_DETECTION in Common.hlsl.
+        public const int Max = 64;
     };
 }
 
