@@ -31,9 +31,8 @@ public sealed class Visualizer : MonoBehaviour
         _detector = new PalmDetector(_resources);
         _material = new Material(_shader);
 
-        var target = GraphicsBuffer.Target.IndirectArguments;
-        _boxDrawArgs = new GraphicsBuffer(target, 4, sizeof(uint));
-        _keyDrawArgs = new GraphicsBuffer(target, 4, sizeof(uint));
+        _boxDrawArgs = Klak.NNUtils.BufferUtil.NewDrawArgs();
+        _keyDrawArgs = Klak.NNUtils.BufferUtil.NewDrawArgs();
         _boxDrawArgs.SetData(new [] {6, 0, 0, 0});
         _keyDrawArgs.SetData(new [] {24, 0, 0, 0});
     }
