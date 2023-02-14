@@ -18,6 +18,9 @@ public sealed partial class PalmDetector : System.IDisposable
     public void Dispose()
       => DeallocateObjects();
 
+    public void ProcessInput(float threshold = 0.75f)
+      => RunModel(threshold);
+
     public void ProcessImage(Texture image, float threshold = 0.75f)
       => RunModel(image, threshold);
 
@@ -26,6 +29,9 @@ public sealed partial class PalmDetector : System.IDisposable
 
     public System.ReadOnlySpan<Detection> Detections
       => _readCache.Cached;
+
+    public ComputeBuffer InputBuffer
+      => _preprocess.Buffer;
 
     public GraphicsBuffer DetectionBuffer
       => _output.post2;
@@ -90,12 +96,15 @@ public sealed partial class PalmDetector : System.IDisposable
 
     void RunModel(Texture source, float threshold)
     {
+        _preprocess.Dispatch(source, _resources.preprocess);
+        RunModel(threshold);
+    }
+
+    void RunModel(float threshold)
+    {
         // Reset the compute buffer counters.
         _output.post1.SetCounterValue(0);
         _output.post2.SetCounterValue(0);
-
-        // Preprocessing
-        _preprocess.Dispatch(source, _resources.preprocess);
 
         // Run the BlazePalm model.
         _worker.Execute(_preprocess.Tensor);
