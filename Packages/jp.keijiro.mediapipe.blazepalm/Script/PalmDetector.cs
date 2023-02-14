@@ -59,7 +59,7 @@ public sealed partial class PalmDetector : System.IDisposable
         _worker = model.CreateWorker(WorkerFactory.Device.GPU);
 
         // Preprocess
-        _preprocess = new ImagePreprocess(_size, _size);
+        _preprocess = new ImagePreprocess(_size, _size, nchwFix: true);
 
         // Output buffers
         _output.post1 = new GraphicsBuffer(GraphicsBuffer.Target.Append, Detection.Max, Detection.Size);
