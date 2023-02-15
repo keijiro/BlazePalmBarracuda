@@ -27,6 +27,9 @@ public sealed partial class PalmDetector : System.IDisposable
     public int ImageSize
       => _size;
 
+    public bool InputIsNCHW
+      => _preprocess.IsNCHW;
+
     public System.ReadOnlySpan<Detection> Detections
       => _readCache.Cached;
 
